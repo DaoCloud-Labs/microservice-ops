@@ -25,6 +25,8 @@ public class MqConsumer {
 	private Long successTime;
 	
 	private String id;
+	
+	private String serviceUrl;
 
 	public String getHost() {
 		return host;
@@ -121,5 +123,13 @@ public class MqConsumer {
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
+	public String getServiceUrl() {
+		return serviceUrl;
+	}
+
+	public void setServiceUrl(String serviceUrl) {
+		this.serviceUrl = serviceUrl;
+	}
+
 }

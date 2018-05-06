@@ -60,7 +60,6 @@ public class MqMsgListener implements ChannelAwareMessageListener{
 			switch (mqMessageType) {
 			case PRODUCER:
 				MqProducer producer = new MqProducer();
-//				BeanUtils.copyProperties(mqMessage, producer);
 				properties.toBean(producer);
 				mqProducerService.save(producer);
 				break;
@@ -77,7 +76,6 @@ public class MqMsgListener implements ChannelAwareMessageListener{
 			
 			MqMessage mqMessage = new MqMessage();
 			properties.toBean(mqMessage);
-			mqMessage.setData(properties.getJSONObject("data").toString());
 			mqMessage.setOccurTime(Long.parseLong(time));
 			
 			mqMessageService.save(mqMessage, mqMessageType);

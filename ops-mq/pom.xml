@@ -23,8 +23,8 @@
 		<java.version>1.8</java.version>
 		<log4j-api.version>2.8.2</log4j-api.version>
 		<log4j-core.version>2.8.2</log4j-core.version>
-		<elasticsearch.version>5.4.1</elasticsearch.version>
-		<transport.version>5.4.1</transport.version>
+		<elasticsearch.version>5.6.4</elasticsearch.version>
+		<transport.version>5.6.4</transport.version>
 		<spring-cloud.version>Dalston.SR4</spring-cloud.version>
 	</properties>
 
@@ -93,6 +93,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-mongodb</artifactId>
 		</dependency>
 
 		<dependency>

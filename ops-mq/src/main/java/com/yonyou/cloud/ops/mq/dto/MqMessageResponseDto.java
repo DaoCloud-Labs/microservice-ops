@@ -34,6 +34,8 @@ public class MqMessageResponseDto {
 	
 	private Long consumeSuccessTime;
 	
+	private String serviceUrl;
+	
 	private List<MqProducer> producers;
 	
 	private List<MqConsumerDto> consumers;
@@ -164,6 +166,14 @@ public class MqMessageResponseDto {
 
 	public void setConsumeStatus(String consumeStatus) {
 		this.consumeStatus = consumeStatus;
+	}
+
+	public String getServiceUrl() {
+		return serviceUrl;
+	}
+
+	public void setServiceUrl(String serviceUrl) {
+		this.serviceUrl = serviceUrl;
 	}
 
 }

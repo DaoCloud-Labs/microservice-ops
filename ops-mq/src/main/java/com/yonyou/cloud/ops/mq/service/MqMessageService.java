@@ -7,14 +7,25 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import com.yonyou.cloud.common.beans.PageResultResponse;
 import com.yonyou.cloud.common.service.BaseEsService;
+import com.yonyou.cloud.common.service.utils.PageQuery;
 import com.yonyou.cloud.ops.mq.common.MqMessageStatus;
 import com.yonyou.cloud.ops.mq.common.MqMessageType;
-import com.yonyou.cloud.ops.mq.common.MqOpsConstant;
 import com.yonyou.cloud.ops.mq.entity.MqConsumeDetailInfo;
 import com.yonyou.cloud.ops.mq.entity.MqMessage;
+import com.yonyou.cloud.ops.mq.repository.MqConsumeDetailInfoRepository;
+import com.yonyou.cloud.ops.mq.repository.MqMessageRepository;
 
 @Service
 public class MqMessageService extends BaseEsService<MqMessage>{
@@ -23,20 +34,36 @@ public class MqMessageService extends BaseEsService<MqMessage>{
 	
 	@Autowired
 	MqConsumeDetailInfoService mqConsumeDetailInfoService;
+	
+	@Autowired
+	private MqMessageRepository mqMessageRepository;
+	
+	@Autowired
+	private MqConsumeDetailInfoRepository mqConsumeDetailInfoRepository;
+	
+	@Autowired
+	private MongoTemplate mongoTemplate;
 
 	public void save (MqMessage mqMessage, MqMessageType mqMessageType) throws Exception{
 		
-		MqMessage oldMessage = selectOne(MqOpsConstant.INDEX, "msgKey:" + "\"" +mqMessage.getMsgKey() + "\"");
+		MqMessage oldMessage = mqMessageRepository.findByMsgKey(mqMessage.getMsgKey());
+		
+//		MqMessage oldMessage = selectOne(MqOpsConstant.INDEX, "msgKey:" + "\"" +mqMessage.getMsgKey() + "\"");
 		
 		if(oldMessage == null){
 			updateMsgStatus(mqMessage, mqMessage, mqMessageType);
-			insert(MqOpsConstant.INDEX, mqMessage);
-//		} else if((MqMessageStatus.CONSUMED.name().equals(oldMessage.getConsumeStatus()) && MqMessageType.CONSUMER == mqMessageType)
-//				||(MqMessageStatus.PRODUCED.name().equals(oldMessage.getProduceStatus()) && MqMessageType.PRODUCER == mqMessageType)){
-//			logger.error("this message status is success,msgkey:{}", mqMessage.getMsgKey());
+			mqMessageRepository.insert(mqMessage);
 		} else {
 			updateMsgStatus(oldMessage, mqMessage, mqMessageType);
-			update(MqOpsConstant.INDEX, oldMessage, oldMessage.getId());
+	        Query query=new Query(Criteria.where("msgKey").is(oldMessage.getMsgKey()));
+	        Update update= new Update().set("produceSuccessTime", oldMessage.getProduceSuccessTime())
+	        						   .set("produceStatus", oldMessage.getProduceStatus())
+	        						   .set("produceFailTimes", oldMessage.getProduceFailTimes())
+	        						   .set("consumeSuccessTime", oldMessage.getConsumeSuccessTime())
+	        						   .set("consumeStatus", oldMessage.getConsumeStatus())
+	        						   .set("consumeFailTimes", oldMessage.getConsumeFailTimes());
+			mongoTemplate.updateMulti(query, update, MqMessage.class);
+//			update(MqOpsConstant.INDEX, oldMessage, oldMessage.getId());
 		}
 	}
 
@@ -57,7 +84,8 @@ public class MqMessageService extends BaseEsService<MqMessage>{
 			boolean allSucces = true;
 			
 			try {
-				List<MqConsumeDetailInfo> mqConsumeDetailInfo = mqConsumeDetailInfoService.selectList(MqOpsConstant.INDEX, "msgKey:" + "\"" +newMessage.getMsgKey() + "\"");
+				List<MqConsumeDetailInfo> mqConsumeDetailInfo = mqConsumeDetailInfoRepository.findByMsgKey(newMessage.getMsgKey());
+//				List<MqConsumeDetailInfo> mqConsumeDetailInfo = mqConsumeDetailInfoService.selectList(MqOpsConstant.INDEX, "msgKey:" + "\"" +newMessage.getMsgKey() + "\"");
 				//分组
 				Map<String, List<MqConsumeDetailInfo>> m = mqConsumeDetailInfo.stream().filter(t -> t.getConsumerId() != null)
 						.collect(Collectors.groupingBy(MqConsumeDetailInfo::getConsumerId));
@@ -80,5 +108,38 @@ public class MqMessageService extends BaseEsService<MqMessage>{
 		default:
 			break;
 		}
+	}
+
+	public PageResultResponse<MqMessage> queryByCondition(PageQuery request) {
+        Query query = new Query();
+        
+        if(request.get("orderBy") != null && request.get("orderType") != null) {
+        	query.with(new Sort(new Order(Direction.valueOf(request.get("orderType").toString().toUpperCase()),request.get("orderBy").toString())));
+        }
+        
+        if(request.get("occurStartTime") != null && request.get("occurEndTime") != null){
+    		query.addCriteria(Criteria.where("occurTime").gte(request.get("occurStartTime")).lte(request.get("occurEndTime")));
+        } else if (request.get("occurStartTime") != null) {
+    		query.addCriteria(Criteria.where("occurTime").gte(request.get("occurStartTime")));  
+        } else if (request.get("occurEndTime") != null) {
+        	query.addCriteria(Criteria.where("occurTime").lte(request.get("occurEndTime")));  
+        }
+        
+        request.remove("orderBy");
+        request.remove("orderType");
+        request.remove("occurStartTime");
+        request.remove("occurEndTime");
+        
+        for (Map.Entry<String, Object> entry : request.entrySet()) {
+        	if(!StringUtils.isEmpty(entry.getValue())) {
+        		query.addCriteria(Criteria.where(entry.getKey()).regex(".*?" + entry.getValue().toString()+ ".*"));  
+        	}
+        }
+        
+        query.skip((request.getPage() -1) * request.getLimit());
+        query.limit(request.getLimit());
+        List<MqMessage> l = mongoTemplate.find(query, MqMessage.class);
+        long count = mongoTemplate.count(query, MqMessage.class);
+		return new PageResultResponse<MqMessage>(count, l);
 	}
 } 

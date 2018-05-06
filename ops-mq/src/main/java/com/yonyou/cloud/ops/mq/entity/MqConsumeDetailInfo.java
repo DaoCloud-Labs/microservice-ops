@@ -20,6 +20,8 @@ public class MqConsumeDetailInfo {
 	
 	private String consumerId;
 	
+	private String serviceUrl;
+	
 	public String getHost() {
 		return host;
 	}
@@ -92,4 +94,12 @@ public class MqConsumeDetailInfo {
 		this.consumerId = consumerId;
 	}
 
+	public String getServiceUrl() {
+		return serviceUrl;
+	}
+
+	public void setServiceUrl(String serviceUrl) {
+		this.serviceUrl = serviceUrl;
+	}
+	
 }

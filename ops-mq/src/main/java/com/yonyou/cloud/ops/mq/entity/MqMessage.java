@@ -1,9 +1,12 @@
 package com.yonyou.cloud.ops.mq.entity;
 
+import org.springframework.data.annotation.Id;
+
 public class MqMessage {
 	
 	private String host;
 	
+	@Id
 	private String msgKey;
 	
 	private String msg;
@@ -35,6 +38,8 @@ public class MqMessage {
 	private Long consumeSuccessTime;
 	
 	private String id;
+	
+	private String serviceUrl;
 
 	public String getHost() {
 		return host;
@@ -171,5 +176,13 @@ public class MqMessage {
 	public void setConsumeStatus(String consumeStatus) {
 		this.consumeStatus = consumeStatus;
 	}
-	
+
+	public String getServiceUrl() {
+		return serviceUrl;
+	}
+
+	public void setServiceUrl(String serviceUrl) {
+		this.serviceUrl = serviceUrl;
+	}
+
 }

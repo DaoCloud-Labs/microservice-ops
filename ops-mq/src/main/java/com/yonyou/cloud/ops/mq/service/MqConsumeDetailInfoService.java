@@ -1,15 +1,19 @@
 package com.yonyou.cloud.ops.mq.service;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.yonyou.cloud.common.service.BaseEsService;
-import com.yonyou.cloud.ops.mq.common.MqOpsConstant;
 import com.yonyou.cloud.ops.mq.entity.MqConsumeDetailInfo;
 import com.yonyou.cloud.ops.mq.entity.MqConsumer;
+import com.yonyou.cloud.ops.mq.repository.MqConsumeDetailInfoRepository;
 
 @Service
 public class MqConsumeDetailInfoService extends BaseEsService<MqConsumeDetailInfo>{
+	
+	@Autowired
+	private MqConsumeDetailInfoRepository mqConsumeDetailInfoRepository;
 	
 //	private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -22,6 +26,7 @@ public class MqConsumeDetailInfoService extends BaseEsService<MqConsumeDetailInf
 //		}else{
 //			logger.error("this message status is success,msgkey:{}", mqConsumeDetailInfo.getMsgKey());
 //		}
-		insert(MqOpsConstant.INDEX, mqConsumeDetailInfo);
+		mqConsumeDetailInfoRepository.save(mqConsumeDetailInfo);
+//		insert(MqOpsConstant.INDEX, mqConsumeDetailInfo);
 	}
 }
